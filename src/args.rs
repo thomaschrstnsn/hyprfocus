@@ -16,6 +16,8 @@ pub enum Target {
     #[command(arg_required_else_help = true)]
     Class(TargetArgs),
     #[command(arg_required_else_help = true)]
+    InitialTitle(TargetArgs),
+    #[command(arg_required_else_help = true)]
     Title(TargetArgs),
 }
 
@@ -23,10 +25,10 @@ pub enum Target {
 #[command(flatten_help = true)]
 pub struct TargetArgs {
     #[command(flatten)]
-    matcher: MatchArgs,
+    pub matcher: MatchArgs,
 
     #[command(subcommand)]
-    starter: Option<OpenArgs>,
+    pub starter: Option<OpenArgs>,
 }
 
 #[derive(Debug, Subcommand, Clone)]
@@ -43,12 +45,12 @@ pub struct CommandArgs {
 #[derive(Debug, Args, Clone)]
 pub struct MatchArgs {
     #[arg(long, short, value_enum,default_value_t = MatchArea::Exact)]
-    area: MatchArea,
+    pub area: MatchArea,
 
     #[arg(long, short, value_enum, default_value_t = MatchMode::Insensitive)]
-    mode: MatchMode,
+    pub mode: MatchMode,
 
-    matcher: String,
+    pub matcher: String,
 }
 
 #[derive(Debug, ValueEnum, Clone, PartialEq)]

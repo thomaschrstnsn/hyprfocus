@@ -1,8 +1,3 @@
-use hyprland::{
-    data::Clients,
-    shared::{HyprData as _, HyprDataVec as _},
-};
-
 mod args;
 use args::*;
 
@@ -13,10 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = HyprFocusArgs::parse();
 
-    args.target.execute();
-
-    let clients = Clients::get()?.to_vec();
-    tracing::info!(?clients, "got clients");
+    args.target.execute()?;
 
     Ok(())
 }
