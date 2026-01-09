@@ -48,7 +48,7 @@ impl MatchArgs {
 impl ClientTarget {
     fn find(&self) -> Result<Vec<Client>, HyprError> {
         let clients = Clients::get()?.to_vec();
-        tracing::info!(?clients, "got clients");
+        tracing::debug!(?clients, "got clients");
 
         let mut filtered: Vec<_> = clients
             .into_iter()
@@ -64,8 +64,6 @@ impl ClientTarget {
             .collect();
 
         filtered.sort_by_key(|c| -c.focus_history_id);
-
-        tracing::info!(?filtered, "filtered them");
 
         Ok(filtered)
     }
@@ -88,8 +86,6 @@ fn focus_client(client: Client) -> Result<(), HyprError> {
 
 impl Target {
     pub fn execute(&self) -> Result<(), Error> {
-        tracing::info!(?self, "hello");
-
         let client_target = self.as_client_target();
         let clients = client_target.find()?;
         if let Some(next_client) = clients.into_iter().next() {
