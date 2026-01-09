@@ -39,7 +39,7 @@ pub enum OpenArgs {
 
 #[derive(Debug, Args, Clone)]
 pub struct CommandArgs {
-    command: String,
+    pub command: String,
 }
 
 #[derive(Debug, Args, Clone)]

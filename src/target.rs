@@ -2,6 +2,7 @@ use crate::args::{MatchArgs, OpenArgs, Target};
 
 use hyprland::{
     data::{Client, Clients},
+    dispatch::Dispatch,
     error::HyprError,
     shared::{HyprData as _, HyprDataVec as _},
 };
@@ -49,7 +50,7 @@ impl ClientTarget {
         let clients = Clients::get()?.to_vec();
         tracing::info!(?clients, "got clients");
 
-        let filtered = clients
+        let mut filtered: Vec<_> = clients
             .into_iter()
             .filter(|client| {
                 let (match_args, content) = match self {
@@ -58,15 +59,31 @@ impl ClientTarget {
                     ClientTarget::InitialTitle(match_args) => (match_args, &client.initial_title),
                     ClientTarget::Title(match_args) => (match_args, &client.title),
                 };
-
                 match_args.matches(content)
             })
             .collect();
+
+        filtered.sort_by_key(|c| -c.focus_history_id);
 
         tracing::info!(?filtered, "filtered them");
 
         Ok(filtered)
     }
+}
+
+impl OpenArgs {
+    fn exec(&self) -> Result<(), HyprError> {
+        let command = match self {
+            OpenArgs::Start(command_args) => &command_args.command,
+        };
+        Dispatch::call(hyprland::dispatch::DispatchType::Exec(command))
+    }
+}
+
+fn focus_client(client: Client) -> Result<(), HyprError> {
+    Dispatch::call(hyprland::dispatch::DispatchType::FocusWindow(
+        hyprland::dispatch::WindowIdentifier::Address(client.address),
+    ))
 }
 
 impl Target {
@@ -75,19 +92,25 @@ impl Target {
 
         let client_target = self.as_client_target();
         let clients = client_target.find()?;
-        if !clients.is_empty() {
+        if let Some(next_client) = clients.into_iter().next() {
             // lets try to focus it
-            todo!()
+            if next_client.focus_history_id == 0 {
+                tracing::info!(
+                    ?next_client,
+                    "app only has one client, and it is already focused"
+                );
+            } else {
+                tracing::info!(?next_client, "focusing client");
+                focus_client(next_client)?;
+            }
         } else {
             // no match, are we configured to open anything?
+            let open_args = self.as_open_args().ok_or(Error::NoMatchFound)?;
 
-            if let Some(open_args) = self.as_open_args() {
-                // TODO: try to open
-            } else {
-                return Err(Error::NoMatchFound);
-            }
+            tracing::info!(?open_args, "opening app");
+
+            open_args.exec()?;
         }
-
         Ok(())
     }
 
