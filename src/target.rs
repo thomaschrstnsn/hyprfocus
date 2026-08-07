@@ -74,14 +74,19 @@ impl OpenArgs {
         let command = match self {
             OpenArgs::Start(command_args) => &command_args.command,
         };
-        Dispatch::call(hyprland::dispatch::DispatchType::Exec(command))
+        // Hyprland >= 0.56 `hyprctl dispatch` only accepts lua expressions
+        // (e.g. hl.dsp.exec_cmd("...")), so the old `exec <cmd>` string form
+        // no longer parses.
+        let expr = format!("({command:?})");
+        Dispatch::call(hyprland::dispatch::DispatchType::Custom("hl.dsp.exec_cmd", &expr))
     }
 }
 
 fn focus_client(client: Client) -> Result<(), HyprError> {
-    Dispatch::call(hyprland::dispatch::DispatchType::FocusWindow(
-        hyprland::dispatch::WindowIdentifier::Address(client.address),
-    ))
+    // Hyprland >= 0.56 `hyprctl dispatch` only accepts lua expressions, so
+    // focus via the lua dispatcher instead of the old `focuswindow <sel>` form.
+    let selector = format!("{{ window = \"address:{}\" }}", client.address);
+    Dispatch::call(hyprland::dispatch::DispatchType::Custom("hl.dsp.focus", &selector))
 }
 
 impl Target {
