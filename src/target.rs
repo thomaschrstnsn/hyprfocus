@@ -1,17 +1,17 @@
 use crate::args::{MatchArgs, OpenArgs, Target};
 
-use hyprland::{
-    data::{Client, Clients},
-    dispatch::Dispatch,
-    error::HyprError,
-    shared::{HyprData as _, HyprDataVec as _},
-};
+use hyprland::{dispatch::Dispatch, error::HyprError};
 use thiserror::Error;
+
+use crate::clients::{self, Client};
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("hyprland error")]
     Hyprland(#[from] HyprError),
+
+    #[error("failed to query hyprland clients")]
+    Clients(#[from] clients::Error),
 
     #[error("no match found")]
     NoMatchFound,
@@ -46,8 +46,8 @@ impl MatchArgs {
 }
 
 impl ClientTarget {
-    fn find(&self) -> Result<Vec<Client>, HyprError> {
-        let clients = Clients::get()?.to_vec();
+    fn find(&self) -> Result<Vec<Client>, clients::Error> {
+        let clients = clients::get()?;
         tracing::debug!(?clients, "got clients");
 
         let mut filtered: Vec<_> = clients
